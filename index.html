@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pacman</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <canvas id="my_canvas"></canvas>
+    <audio id="tomarMoneda" src="tomarMoneda.m4a" preload="auto"></audio>
+    <audio id="comerFantasmas" src="comerFantasmas.mp3" preload="auto"></audio>
+    <audio id="dañoJugador" src="dañoJugador.m4a" preload="auto"></audio>
+    <audio id="matarEnemigo" src="matarEnemigo.m4a" preload="auto"></audio>
+    <audio id="agarrarFruta" src="agarrarFruta.m4a" preload="auto"></audio>
+    <audio id="musicaFondo" src="musicaFondo.mp3" preload="auto"></audio>
+
+
+
+
+    <script type="text/javascript">
+        const tomarMoneda = document.getElementById('tomarMoneda');
+        const comerFantasmas = document.getElementById('comerFantasmas');
+        const dañoJugador = document.getElementById('dañoJugador');
+        const matarEnemigo = document.getElementById('matarEnemigo');
+        const agarrarFruta = document.getElementById('agarrarFruta');
+        const musicaFondo = document.getElementById('musicaFondo');
+
+
+
+
+
+        const my_canvas = document.getElementById('my_canvas');
+        const ctx = my_canvas.getContext('2d');
+    
+        const fondoJuego = new Image();
+        fondoJuego.src = 'fondoo.jfif';
+        const instructivo = new Image();
+        instructivo.src = 'instructivo.png';
+        const muroct = new Image();
+        muroct.src = 'muroct.jfif';
+        const fondonata = new Image();
+        fondonata.src = 'fondonata.webp';
+        const jugadorfot = new Image();
+        jugadorfot.src = 'jugadorfot.png';
+        const enemigofot = new Image();
+        enemigofot.src = 'enemigofot.png';
+        const enemigo1fot = new Image();
+        enemigo1fot.src = 'enemigo1fot.png';
+        const enemigo2fot = new Image();
+        enemigo2fot.src = 'enemigo2fot.png';
+        const enemigo3fot = new Image();
+        enemigo3fot.src = 'enemigo3fot.png';
+        const moneda = new Image();
+        moneda.src = 'moneda.webp';
+        const powerup = new Image();
+        powerup.src = 'powerup.jpg';
+        const enemigopower = new Image();
+        enemigopower.src = 'enemigopower.png';
+        const enemigo1power = new Image();
+        enemigo1power.src = 'enemigo1power.png';
+        const enemigo2power = new Image();
+        enemigo2power.src = 'enemigo2power.png';
+        const enemigo3power = new Image();
+        enemigo3power.src = 'enemigo3power.png';
+        const fruta1 = new Image();
+        fruta1.src = 'fruta1.jpg';
+        const fruta2 = new Image();
+        fruta2.src = 'fruta2.jfif';
+        const fruta3 = new Image();
+        fruta3.src = 'fruta3.jpg';
+        const fruta4 = new Image();
+        fruta4.src = 'fruta4.jpg';
+        
+        let frutasOrden = 1;
+        let timeoutQuitar;
+        let margenMonedas= 7;
+        let margenEnemigos= 10;
+        let powerpuesto = 0;
+        let speed = 1;
+        let direction = "";
+        let score = 0;
+        let anteriorDir = "";
+        let bloqueadoDir = "";
+        let vidas = 3;
+        let victoria=0;
+        musicaFondo.volume=0.3;
+        musicaFondo.play();
+        
+
+        function reproducirAudio(src, inicio, duracion, volumen = 1) {
+            const audioPuesto = new Audio(src); 
+            audioPuesto.volume = volumen;  
+            audioPuesto.currentTime = inicio; 
+            audioPuesto.play(); 
+
+            setTimeout(() => {
+                audioPuesto.pause(); 
+            }, duracion * 1000);
+        }
+
+        const mapa = [
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 2, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 2, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1],
+            [1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+            [1, 1, 1, 1, 0, 1, 1, 1, 9, 1, 9, 1, 1, 1, 0, 1, 1, 1, 1],
+            [1, 1, 1, 1, 0, 1, 9, 9, 9, 9, 9, 9 ,9 ,1, 0 ,1, 1, 1, 1],
+            [1, 1, 1, 1, 0, 1, 9, 1, 1, 9, 1, 1, 9, 1 ,0 ,1 ,1 ,1, 1],
+            [9, 9, 9, 9, 0, 9, 9, 1, 1, 9, 1, 1, 9, 9, 0, 9, 9, 9, 9],
+            [1, 1, 1, 1, 0, 1, 9, 1, 1, 1, 1, 1, 9, 1, 0, 1, 1, 1, 1],
+            [1, 1, 1, 1, 0, 1, 9, 9, 9, 9, 9, 9, 9, 1, 0, 1, 1, 1, 1],
+            [1, 1, 1, 1, 0, 1, 9, 1, 1, 1, 1, 1, 9, 1, 0, 1, 1, 1, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1],
+            [1, 2, 0, 1, 0, 0, 0, 0, 0, 9, 0, 0, 0, 0, 0, 1, 0, 2, 1],
+            [1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1],
+            [1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+            [1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0 ,0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+        ];
+
+
+        function verificarVictoria(matriz) {
+            for (let i = 0; i < matriz.length; i++) {
+                for (let j = 0; j < matriz[i].length; j++) {
+                    if (matriz[i][j] === 0 || matriz[i][j] === 2) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+        const tamaño = 40;
+
+        function resizeCanvas() {
+            my_canvas.width = window.innerWidth;
+            my_canvas.height = window.innerHeight;
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+    
+
+        
+        class Rectangulo {
+            constructor(x, y, w, h, c,img=null, direccion) {
+                this.x = x;
+                this.y = y;
+                this.w = w;
+                this.h = h;
+                this.c = c;
+                this.img=img;
+                this.direccion=direccion;
+            }
+            draw() {
+                if (this.img) {
+                    ctx.drawImage(this.img, this.x, this.y, this.w, this.h);
+                } else {
+                    ctx.fillStyle = this.c;
+                    ctx.fillRect(this.x, this.y, this.w, this.h);
+                }
+            }
+
+            tocando(otro, margen = 0) {
+            return (this.x + margen < otro.x + otro.w - margen &&
+                    this.x + this.w - margen > otro.x + margen &&
+                    this.y + margen < otro.y + otro.h - margen &&
+                    this.y + this.h - margen > otro.y + margen);
+        }
+        }
+
+        document.addEventListener("keydown", function (e) {
+            switch (e.keyCode) {
+                case 65: direction = "left"; break;
+                case 87: direction = "up"; break;
+                case 68: direction = "right"; break;
+                case 83: direction = "down"; break;
+                    
+
+                
+            }
+        });
+
+        function aleatorio() {
+            const direcciones = ["left", "up", "right", "down"];
+            return direcciones[Math.floor(Math.random() * direcciones.length)];
+        }
+
+
+        function colocarFrutas() {
+            let posicionesValidas = [];
+
+            
+            for (let row = 0; row < mapa.length; row++) {
+                for (let col = 0; col < mapa[row].length; col++) {
+                    if (mapa[row][col] === 8) {
+                        posicionesValidas.push({ row, col });
+                    }
+                }
+            }
+
+            
+            if (posicionesValidas.length > 0) {
+                const posicionElegida = posicionesValidas[Math.floor(Math.random() * posicionesValidas.length)];
+                
+                    if(frutasOrden===1){
+                        mapa[posicionElegida.row][posicionElegida.col] = 3;
+                        frutasOrden++;
+                    } else if(frutasOrden===2){
+                        mapa[posicionElegida.row][posicionElegida.col] = 4;
+                        frutasOrden++;
+                    } else if(frutasOrden===3){
+                        mapa[posicionElegida.row][posicionElegida.col] = 5;
+                        frutasOrden++;
+                    } else if(frutasOrden===4){
+                        mapa[posicionElegida.row][posicionElegida.col] = 6;
+                        frutasOrden=1;
+                    }
+                    
+                    
+                    
+                
+                 
+            }
+        }
+        
+        setInterval(colocarFrutas, 15000);
+
+        function update() {
+            if(verificarVictoria(mapa)){
+                alert("GANASTE CON: "+ score +"PUNTOS W");
+                    player.x=1110;
+                    player.y=750;
+                    direction="";
+                    vidas = 3;  
+                    score = 0;
+                    enemigo.x=1110;
+                    enemigo.y=510;
+                    enemigo1.x=1110;
+                    enemigo1.y=510;
+                    enemigo2.x=1110;
+                    enemigo2.y=510;
+                    enemigo3.x=1110;
+                    enemigo3.y=510;
+
+                    frutasOrden = 1;
+                    
+                    
+                    powerpuesto = 0;
+                    speed = 1;
+                    direction = "";
+                    score = 0;
+                    anteriorDir = "";
+                    bloqueadoDir = "";
+                    vidas = 3;
+                    enemigo.direccion="up";
+                    enemigo1.direccion="";
+                    enemigo2.direccion="";
+                    enemigo3.direccion="";
+
+
+                    setTimeout(() => {
+                        enemigo1.direccion = "up";
+                    }, 5000);
+                    setTimeout(() => {
+                        enemigo2.direccion = "up";
+                    }, 10000);
+                    setTimeout(() => {
+                        enemigo3.direccion = "up";
+                    }, 15000);
+                    
+                    for (let row = 0; row < mapa.length; row++) {
+                        for (let col = 0; col < mapa[row].length; col++) {
+                            if (mapa[row][col] === 8 || mapa[row][col] === 3 || mapa[row][col] === 4 || mapa[row][col] === 5 || mapa[row][col] === 6) {
+                                {
+                                    (mapa[row][col]=0);
+                                }
+                            }
+                            if (mapa[row][col] === 7) {
+                                {
+                                    (mapa[row][col]=2);
+                                }
+                            }
+                            
+                        }
+                    }
+                    musicaFondo.currentTime=0;
+                    musicaFondo.play();
+                } else{
+            
+            
+
+            if(powerpuesto===1){
+                enemigo.img=enemigopower;
+                enemigo2.img=enemigo2power;
+                enemigo3.img=enemigo3power;
+                enemigo1.img=enemigo1power;
+            }else{
+                enemigo.img = enemigofot;
+                enemigo1.img = enemigo1fot;
+                enemigo2.img = enemigo2fot;
+                enemigo3.img = enemigo3fot;
+            }
+
+            let sepuedeMover = true;
+            
+            switch (direction) {
+                case "left": player.x -=  speed; break;
+                case "up": player.y -=  speed; break;
+                case "right": player.x += speed; break;
+                case "down": player.y +=  speed; break;
+                
+            }
+            switch (enemigo3.direccion) {
+                case "left": enemigo3.x -=  speed; break;
+                case "up": enemigo3.y -=  speed; break;
+                case "right": enemigo3.x += speed; break;
+                case "down": enemigo3.y +=  speed; break;
+                
+            }
+
+            switch (enemigo2.direccion) {
+                case "left": enemigo2.x -=  speed; break;
+                case "up": enemigo2.y -=  speed; break;
+                case "right": enemigo2.x += speed; break;
+                case "down": enemigo2.y +=  speed; break;
+                
+            }
+
+            switch (enemigo1.direccion) {
+                case "left": enemigo1.x -=  speed; break;
+                case "up": enemigo1.y -=  speed; break;
+                case "right": enemigo1.x += speed; break;
+                case "down": enemigo1.y +=  speed; break;
+                
+            }
+
+            switch (enemigo.direccion) {
+                case "left": enemigo.x -=  speed; break;
+                case "up": enemigo.y -=  speed; break;
+                case "right": enemigo.x += speed; break;
+                case "down": enemigo.y +=  speed; break;
+                
+            }
+        
+         
+            if (player.x <745 && player.y > 507) player.x = 1472;
+            if (player.x > 1473 && player.y > 507) player.x = 746;
+ 
+            
+            for (let row = 0; row < mapa.length; row++) {
+                for (let col = 0; col < mapa[row].length; col++) {
+                    
+                    if (mapa[row][col] === 1) {
+                        let muro = new Rectangulo(col * tamaño + 750, row * tamaño + 150, tamaño, tamaño, "red",muroct);
+
+
+
+                        if (player.tocando(muro)) {
+                            sepuedeMover = false;
+                            bloqueadoDir=direction;
+                            switch (direction) {
+                                case "left": player.x += speed; break;
+                                case "up": player.y += speed; break;
+                                case "right": player.x -= speed; break;
+                                case "down": player.y -= speed; break;
+                            }
+                            
+                            direction=anteriorDir;
+                        }
+                        if (enemigo3.tocando(muro)){
+                            switch (enemigo3.direccion) {
+                                case "left": enemigo3.x += speed; break;
+                                case "up": enemigo3.y += speed; break;
+                                case "right": enemigo3.x -= speed; break;
+                                case "down": enemigo3.y -= speed; break;
+                            }
+                            enemigo3.direccion=aleatorio();
+                        }
+                        if (enemigo2.tocando(muro)){
+                            switch (enemigo2.direccion) {
+                                case "left": enemigo2.x += speed; break;
+                                case "up": enemigo2.y += speed; break;
+                                case "right": enemigo2.x -= speed; break;
+                                case "down": enemigo2.y -= speed; break;
+                            }
+                            enemigo2.direccion=aleatorio();
+                        }
+                        if (enemigo1.tocando(muro)){
+                            switch (enemigo1.direccion) {
+                                case "left": enemigo1.x += speed; break;
+                                case "up": enemigo1.y += speed; break;
+                                case "right": enemigo1.x -= speed; break;
+                                case "down": enemigo1.y -= speed; break;
+                            }
+                            enemigo1.direccion=aleatorio();
+                        }
+                        if (enemigo.tocando(muro)){
+                            switch (enemigo.direccion) {
+                                case "left": enemigo.x += speed; break;
+                                case "up": enemigo.y += speed; break;
+                                case "right": enemigo.x -= speed; break;
+                                case "down": enemigo.y -= speed; break;
+                            }
+                            enemigo.direccion=aleatorio();
+                        }
+                    }
+                    if(mapa[row][col]===3){
+                        let frutaPintar = new Rectangulo(col * tamaño+750, row * tamaño+150, tamaño, tamaño, "red",fruta1);
+                        if (player.tocando(frutaPintar, margenMonedas)) {
+                            mapa[row][col] = 8;
+                            score += 500;
+                            reproducirAudio('agarrarFruta.m4a',0,3,0.5);
+                        }
+                    }
+                    if(mapa[row][col]===4){
+                        let frutaPintar = new Rectangulo(col * tamaño+750, row * tamaño+150, tamaño, tamaño, "red",fruta2);
+                        if (player.tocando(frutaPintar, margenMonedas)) {
+                            mapa[row][col] = 8;
+                            score += 1000;
+                            reproducirAudio('agarrarFruta.m4a',0,3,0.5);
+                        }
+                    }
+                    if(mapa[row][col]===5){
+                        let frutaPintar = new Rectangulo(col * tamaño+750, row * tamaño+150, tamaño, tamaño, "red",fruta3);
+                        if (player.tocando(frutaPintar, margenMonedas)) {
+                            mapa[row][col] = 8;
+                            score += 1500;
+                            reproducirAudio('agarrarFruta.m4a',0,3,0.5);
+                        }
+                    }
+                    if(mapa[row][col]===6){
+                        let frutaPintar = new Rectangulo(col * tamaño+750, row * tamaño+150, tamaño, tamaño, "red",fruta4);
+                        if (player.tocando(frutaPintar, margenMonedas)) {
+                            mapa[row][col] = 8;
+                            score += 2000;
+                            reproducirAudio('agarrarFruta.m4a',0,3,0.5);
+                        }
+                    }
+
+
+                    if (mapa[row][col] === 0){
+                        let monedas = new Rectangulo(col * tamaño+750, row * tamaño+150, 15, 15, "red",moneda);
+                        if(player.tocando(monedas,margenMonedas)){
+                            mapa[row][col]=8;
+                            reproducirAudio('tomarMoneda.m4a',0,2,0.3);
+                            score += 10;
+                        }
+                    }
+
+                    
+
+                    
+                    if (mapa[row][col] === 2){
+                        let potenciador = new Rectangulo(col * tamaño+750, row * tamaño+150, tamaño, tamaño, "red",powerup);
+                        if(player.tocando(potenciador)){
+                            mapa[row][col]=7;
+                            musicaFondo.pause();
+                            musicaFondo.currentTime=0;
+                            comerFantasmas.currentTime=0;
+                            comerFantasmas.pause();
+                            comerFantasmas.volume=0.4;
+                            comerFantasmas.play();
+                            
+                            powerpuesto=1;
+                            score += 50;
+                            
+
+                            clearTimeout(timeoutQuitar);
+                            timeoutQuitar = setTimeout(() => {
+                                powerpuesto = 0;
+                                comerFantasmas.pause(); 
+                                comerFantasmas.currentTime=0;
+                                musicaFondo.play();
+                            }, 10000); 
+                        }
+                        let monedas = new Rectangulo(col * tamaño+750, row * tamaño+150, 15, 15, "red",moneda);
+                        if(player.tocando(monedas,margenMonedas)){
+                            mapa[row][col]=8;
+                            reproducirAudio('tomarMoneda.m4a',0,2,0.3);
+                            score += 10;
+                        }
+                    }
+                }
+            } 
+            if (sepuedeMover) {
+                anteriorDir = direction;
+            }
+
+            if (enemigo.tocando(player,margenEnemigos) || enemigo1.tocando(player,margenEnemigos) || enemigo2.tocando(player,margenEnemigos) || enemigo3.tocando(player,margenEnemigos)) {
+                if(powerpuesto===0){
+                dañoJugador.play();
+                vidas -= 1; 
+
+                player.x=1110;
+                player.y=750;
+                direction="";
+                if (vidas <= 0) {
+                    musicaFondo.pause();
+                    
+                    alert("PERDISTE PA ECHALE GANAS :V ");
+                    vidas = 3;  
+                    score = 0;
+                    enemigo.x=1110;
+                    enemigo.y=510;
+                    enemigo1.x=1110;
+                    enemigo1.y=510;
+                    enemigo2.x=1110;
+                    enemigo2.y=510;
+                    enemigo3.x=1110;
+                    enemigo3.y=510;
+
+                    frutasOrden = 1;
+                    
+                    powerpuesto = 0;
+                    speed = 1;
+                    direction = "";
+                    score = 0;
+                    anteriorDir = "";
+                    bloqueadoDir = "";
+                    vidas = 3;
+                    enemigo.direccion="up";
+                    enemigo1.direccion="";
+                    enemigo2.direccion="";
+                    enemigo3.direccion="";
+
+
+                    setTimeout(() => {
+                        enemigo1.direccion = "up";
+                    }, 5000);
+                    setTimeout(() => {
+                        enemigo2.direccion = "up";
+                    }, 10000);
+                    setTimeout(() => {
+                        enemigo3.direccion = "up";
+                    }, 15000);
+                    
+                    for (let row = 0; row < mapa.length; row++) {
+                        for (let col = 0; col < mapa[row].length; col++) {
+                            if (mapa[row][col] === 8 || mapa[row][col] === 3 || mapa[row][col] === 4 || mapa[row][col] === 5 || mapa[row][col] === 6) {
+                                {
+                                    (mapa[row][col]=0);
+                                }
+                            }
+                            if (mapa[row][col] === 7) {
+                                {
+                                    (mapa[row][col]=2);
+                                }
+                            }
+                            
+                        }
+                    }
+                    musicaFondo.currentTime=0;
+                    musicaFondo.play();
+                }
+            } else if(powerpuesto===1){
+                    score+=100;
+                    reproducirAudio('matarEnemigo.m4a',0,1.5,0.5);
+                    if(enemigo.tocando(player,margenEnemigos)){
+                        enemigo.x=1110;
+                        enemigo.y=510;
+                        enemigo.direccion="";
+                        setTimeout(() => {
+                            enemigo3.direccion = "up";
+                        }, 5000);
+                    }
+                    if(enemigo1.tocando(player,margenEnemigos)){
+                        enemigo1.x=1110;
+                        enemigo1.y=510;
+                        enemigo1.direccion="";
+                        setTimeout(() => {
+                            enemigo1.direccion = "up";
+                        }, 5000);
+                    }
+                    if(enemigo2.tocando(player,margenEnemigos)){
+                        enemigo2.x=1110;
+                        enemigo2.y=510;
+                        enemigo2.direccion="";
+                        setTimeout(() => {
+                            enemigo2.direccion = "up";
+                        }, 5000);
+                    }
+                    if(enemigo3.tocando(player,margenEnemigos)){
+                        enemigo3.x=1110;
+                        enemigo3.y=510;
+                        enemigo3.direccion="";
+                        setTimeout(() => {
+                            enemigo3.direccion = "up";
+                        }, 5000);
+                    }
+                }
+
+                
+            }
+
+        }
+            
+
+    }
+
+        function pintar() {
+            
+            ctx.drawImage(fondoJuego,0,0,my_canvas.width, my_canvas.height);
+
+            ctx.drawImage(instructivo,100,150,400,900);
+
+            ctx.drawImage(fondonata,750,150,760,800);
+
+            ctx.fillStyle = "white";
+            ctx.font = "30px Arial";
+            ctx.fillText(`Puntos: ${score}`, 750, 140); 
+            ctx.fillText(`Vidas: ${vidas}`, 1400, 140); 
+            
+            for (let row = 0; row < mapa.length; row++) {
+                for (let col = 0; col < mapa[row].length; col++) {
+                    if (mapa[row][col] === 1) {
+                        let muro = new Rectangulo(col * tamaño+750, row * tamaño+150, tamaño, tamaño, "red",muroct);
+                        muro.draw();
+                    }
+                    if (mapa[row][col] === 0) {
+                        let monedas = new Rectangulo(col * tamaño+750+10, row * tamaño+150+10, 25, 25, "red",moneda);
+                        monedas.draw();
+                    }
+
+                    if (mapa[row][col] === 2) {
+                        let potenciador = new Rectangulo(col * tamaño+750, row * tamaño+150, tamaño, tamaño, "red",powerup);
+                        potenciador.draw();
+                    }
+                    if (mapa[row][col] === 3) {
+                        let frutaPintar = new Rectangulo(col * tamaño + 750, row * tamaño + 150, tamaño, tamaño, "yellow", fruta1); 
+                        frutaPintar.draw();
+                    }
+                    if (mapa[row][col] === 4) {
+                        let frutaPintar = new Rectangulo(col * tamaño + 750, row * tamaño + 150, tamaño, tamaño, "yellow", fruta2);
+                        frutaPintar.draw();
+                    }
+                    if (mapa[row][col] === 5) {
+                        let frutaPintar = new Rectangulo(col * tamaño + 750, row * tamaño + 150, tamaño, tamaño, "yellow", fruta3); 
+                        frutaPintar.draw();
+                    }
+                    if (mapa[row][col] === 6) {
+                        let frutaPintar = new Rectangulo(col * tamaño + 750, row * tamaño + 150, tamaño, tamaño, "yellow", fruta4); 
+                        frutaPintar.draw();
+                    }
+                    
+                }
+            }
+            enemigo.draw();
+            enemigo1.draw();
+            enemigo2.draw();
+            enemigo3.draw();
+            player.draw();
+            
+            
+
+            update();
+            requestAnimationFrame(pintar);
+        }
+
+       
+        const player = new Rectangulo(1110, 750, 40, 40,"blue",jugadorfot,"up");
+        const enemigo = new Rectangulo(1110,510,40,40,"green",enemigofot,"up");
+        const enemigo1 = new Rectangulo(1110,510,40,40,"pink",enemigo1fot,"");
+        const enemigo2 = new Rectangulo(1110,510,40,40,"red",enemigo2fot,"");
+        const enemigo3 = new Rectangulo(1110,510,40,40,"orange",enemigo3fot,"");
+        
+
+
+
+
+
+        setTimeout(() => {
+            enemigo1.direccion = "up";
+        }, 5000);
+        setTimeout(() => {
+            enemigo2.direccion = "up";
+        }, 10000);
+        setTimeout(() => {
+            enemigo3.direccion = "up";
+        }, 15000);
+        
+
+        requestAnimationFrame(pintar);
+    </script>
+</body>
+
+</html>
